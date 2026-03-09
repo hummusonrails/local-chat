@@ -37,9 +37,13 @@ export default function Home() {
     }
   }, [settings.theme])
 
-  // Apply accent color
+  // Apply accent color + derived variants
   useEffect(() => {
-    document.documentElement.style.setProperty('--accent', settings.accentColor)
+    const root = document.documentElement
+    root.style.setProperty('--accent', settings.accentColor)
+    // Derive hover (lighten) and glow variants from the accent color
+    root.style.setProperty('--accent-hover', settings.accentColor + 'CC')
+    root.style.setProperty('--accent-glow', settings.accentColor + '26')
   }, [settings.accentColor])
 
   // Connect to LM Studio via API proxy
