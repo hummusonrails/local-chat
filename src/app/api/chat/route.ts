@@ -80,16 +80,9 @@ export async function POST(req: NextRequest) {
     input = conversationParts.join('\n\n')
   }
 
-  // MCP integrations — only include when the user's message likely needs tools.
-  // Loading all MCP servers adds thousands of tool-definition tokens to the prompt,
-  // which can overflow smaller models' context windows.
-  const ALL_INTEGRATIONS = [
-    'mcp/brave-search',
-    'mcp/fetch',
-    'mcp/github',
-    'mcp/notion',
-    'mcp/filesystem',
-  ]
+  // MCP integrations — selectively attach only the ONE relevant server.
+  // Each MCP server registers dozens of tool definitions that consume context tokens.
+  // Small models (4B-7B) can't handle more than 1 server's tools at a time.
 
   // Extract the last user message to check for tool-related intent
   const lastUserMsg = (body.messages || [])
@@ -99,23 +92,33 @@ export async function POST(req: NextRequest) {
     ? lastUserMsg.content.toLowerCase()
     : ''
 
-  // Heuristic: only attach MCP tools when the query signals tool use
-  const TOOL_TRIGGERS = [
-    'search', 'find', 'look up', 'lookup', 'google', 'browse',
-    'fetch', 'download', 'scrape', 'url', 'http', 'website',
-    'github', 'repo', 'repository', 'commit', 'pull request', 'issue',
-    'notion', 'database', 'page',
-    'file', 'read file', 'write file', 'directory', 'folder',
-    'what is', 'who is', 'latest', 'news', 'current',
+  // Map query intent → single best MCP server (priority order, first match wins)
+  const INTEGRATION_RULES: Array<{ triggers: string[]; server: string }> = [
+    { triggers: ['search', 'look up', 'lookup', 'google', 'browse', 'weather', 'news', 'latest', 'what is', 'who is', 'current'], server: 'mcp/brave-search' },
+    { triggers: ['github', 'repo', 'repository', 'commit', 'pull request', 'issue', 'star', 'fork'], server: 'mcp/github' },
+    { triggers: ['notion', 'database', 'workspace'], server: 'mcp/notion' },
+    { triggers: ['file', 'read file', 'write file', 'directory', 'folder', 'path'], server: 'mcp/filesystem' },
+    { triggers: ['fetch', 'download', 'scrape', 'url', 'http', 'website', 'webpage'], server: 'mcp/fetch' },
   ]
-  const needsTools = body.useTools === true ||
-    TOOL_TRIGGERS.some(t => lastUserText.includes(t))
+
+  let selectedIntegrations: string[] | undefined
+  if (body.useTools === true) {
+    // Explicit opt-in: send only brave-search as safest default
+    selectedIntegrations = ['mcp/brave-search']
+  } else {
+    for (const rule of INTEGRATION_RULES) {
+      if (rule.triggers.some(t => lastUserText.includes(t))) {
+        selectedIntegrations = [rule.server]
+        break
+      }
+    }
+  }
 
   const nativeBody: Record<string, unknown> = {
     model: body.model,
     input,
     stream,
-    ...(needsTools ? { integrations: ALL_INTEGRATIONS } : {}),
+    ...(selectedIntegrations ? { integrations: selectedIntegrations } : {}),
     temperature: body.temperature ?? 0.7,
     max_output_tokens: body.max_tokens ?? 4096,
   }
