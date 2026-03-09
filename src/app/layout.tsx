@@ -1,17 +1,23 @@
 import type { Metadata, Viewport } from 'next'
-import { GeistSans } from 'geist/font/sans'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import { GeistMono } from 'geist/font/mono'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
 import './globals.css'
 
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-jakarta',
+  display: 'swap',
+})
+
 export const metadata: Metadata = {
-  title: 'Local Chat',
-  description: 'Private AI chat powered by LM Studio',
+  title: 'Sanctum',
+  description: 'Your private AI sanctuary, powered by local models',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Local Chat',
+    title: 'Sanctum',
   },
   icons: {
     icon: [
@@ -24,11 +30,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0a',
+  themeColor: '#0C0A14',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
   viewportFit: 'cover',
 }
 
@@ -38,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`dark ${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="en" className={`dark ${jakarta.variable} ${GeistMono.variable}`}>
       <body className="font-sans antialiased">
         <ServiceWorkerRegistration />
         {children}

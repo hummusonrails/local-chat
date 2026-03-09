@@ -231,16 +231,20 @@ export default function ChatView() {
       >
         {messages.length === 0 && !isStreaming && (
           <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in">
-            <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-5">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            {/* Sanctuary arch icon */}
+            <div className="w-16 h-16 rounded-2xl bg-accent/[0.08] border border-accent/15 flex items-center justify-center mb-6 animate-breathe">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-accent">
+                <path d="M6 20V10C6 6.686 8.686 4 12 4C15.314 4 18 6.686 18 10V20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M9 20V11C9 9.343 10.343 8 12 8C13.657 8 15 9.343 15 11V20" stroke="currentColor" strokeWidth="1" opacity="0.4" strokeLinecap="round"/>
+                <circle cx="12" cy="12.5" r="1.5" fill="currentColor" opacity="0.8"/>
+                <line x1="5" y1="20" x2="19" y2="20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-primary mb-2 tracking-tight">What can I help with?</h2>
-            <p className="text-sm text-tertiary max-w-[300px] leading-relaxed">
+            <h2 className="text-xl font-semibold text-primary mb-2 tracking-tight">Welcome to Sanctum</h2>
+            <p className="text-sm text-tertiary max-w-[320px] leading-relaxed">
               {connected
-                ? `Connected to ${activeModel ? activeModel.split('/').pop() : 'local model'}`
-                : 'Connect to LM Studio to start chatting'
+                ? `Connected to ${activeModel ? activeModel.split('/').pop()?.replace(/-/g, ' ') : 'your local model'}`
+                : 'Connect to LM Studio to begin'
               }
             </p>
           </div>
@@ -270,7 +274,7 @@ export default function ChatView() {
       {!autoScroll && (
         <button
           onClick={scrollToBottom}
-          className="absolute bottom-28 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-surface border border-border shadow-md flex items-center gap-1.5 hover:bg-hover z-10 animate-fade-in"
+          className="absolute bottom-28 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-surface border border-border shadow-lg flex items-center gap-2 hover:bg-hover z-10 animate-scale-in"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-secondary">
             <polyline points="6 9 12 15 18 9" />
@@ -285,10 +289,10 @@ export default function ChatView() {
           <div className="max-w-[740px] mx-auto flex gap-2 overflow-x-auto">
             {images.map((img, i) => (
               <div key={i} className="relative shrink-0 group">
-                <img src={img} alt="" className="w-16 h-16 rounded-xl object-cover border border-border" />
+                <img src={img} alt="" className="w-16 h-16 rounded-xl object-cover border border-border shadow-sm" />
                 <button
                   onClick={() => setImages(prev => prev.filter((_, j) => j !== i))}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary text-background text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
@@ -301,13 +305,14 @@ export default function ChatView() {
       {/* Composer */}
       <div className="px-3 pb-[env(safe-area-inset-bottom,8px)] pt-2">
         <div className="max-w-[740px] mx-auto">
-          <div className="flex items-end gap-1.5 bg-surface border border-border rounded-2xl px-3 py-2 focus-within:border-border-strong focus-within:shadow-sm transition-all">
+          <div className="flex items-end gap-1.5 bg-surface border border-border rounded-2xl px-3 py-2.5 focus-within:border-accent/25 focus-within:shadow-[0_0_0_3px_var(--accent-glow)] transition-all">
             {/* Attachment */}
             <button
               onClick={() => fileInputRef.current?.click()}
               className="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl hover:bg-hover"
+              aria-label="Attach image"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-tertiary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-tertiary">
                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
               </svg>
             </button>
@@ -326,7 +331,7 @@ export default function ChatView() {
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message Local Chat..."
+              placeholder="Ask Sanctum anything..."
               rows={1}
               className="flex-1 bg-transparent text-[15px] text-primary placeholder:text-tertiary resize-none focus:outline-none max-h-[150px] py-1.5 leading-relaxed"
             />
@@ -336,7 +341,8 @@ export default function ChatView() {
               <button
                 onClick={handleSend}
                 disabled={isStreaming || !connected}
-                className="shrink-0 w-9 h-9 rounded-xl bg-accent hover:bg-accent-hover flex items-center justify-center disabled:opacity-30 animate-scale-in"
+                className="shrink-0 w-9 h-9 rounded-xl bg-accent hover:bg-accent-hover flex items-center justify-center disabled:opacity-30 animate-scale-in shadow-[0_2px_8px_var(--accent-glow)]"
+                aria-label="Send message"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
                   <path d="M7 11L12 6L17 11M12 18V7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
@@ -345,18 +351,20 @@ export default function ChatView() {
             ) : isStreaming ? (
               <button
                 onClick={() => useAppStore.getState().stopStreaming()}
-                className="shrink-0 w-9 h-9 rounded-xl bg-primary/10 border border-border flex items-center justify-center animate-scale-in"
+                className="shrink-0 w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/20 flex items-center justify-center animate-scale-in"
+                aria-label="Stop generating"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-red-400">
                   <rect x="6" y="6" width="12" height="12" rx="2" />
                 </svg>
               </button>
             ) : (
               <button
                 onClick={toggleVoice}
-                className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-xl ${isRecording ? 'bg-red-500' : 'hover:bg-hover'}`}
+                className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-xl ${isRecording ? 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)]' : 'hover:bg-hover'}`}
+                aria-label={isRecording ? 'Stop recording' : 'Start voice input'}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isRecording ? 'white' : 'currentColor'} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={isRecording ? '' : 'text-tertiary'}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isRecording ? 'white' : 'currentColor'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={isRecording ? '' : 'text-tertiary'}>
                   <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                   <line x1="12" y1="19" x2="12" y2="23" />
@@ -365,8 +373,8 @@ export default function ChatView() {
               </button>
             )}
           </div>
-          <p className="text-center text-[10px] text-tertiary/60 mt-2 font-medium tracking-wide">
-            Powered by LM Studio &middot; Running locally
+          <p className="text-center text-[10px] text-tertiary/40 mt-2.5 font-medium tracking-wider uppercase">
+            Sanctum &middot; Private &middot; Local
           </p>
         </div>
       </div>

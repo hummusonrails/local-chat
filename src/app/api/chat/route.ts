@@ -80,8 +80,10 @@ export async function POST(req: NextRequest) {
     input = conversationParts.join('\n\n')
   }
 
-  // MCP integrations — all configured servers
-  const integrations = [
+  // MCP integrations — only include when the user's message likely needs tools.
+  // Loading all MCP servers adds thousands of tool-definition tokens to the prompt,
+  // which can overflow smaller models' context windows.
+  const ALL_INTEGRATIONS = [
     'mcp/brave-search',
     'mcp/fetch',
     'mcp/github',
@@ -89,11 +91,31 @@ export async function POST(req: NextRequest) {
     'mcp/filesystem',
   ]
 
+  // Extract the last user message to check for tool-related intent
+  const lastUserMsg = (body.messages || [])
+    .filter((m: { role: string }) => m.role === 'user')
+    .pop()
+  const lastUserText = typeof lastUserMsg?.content === 'string'
+    ? lastUserMsg.content.toLowerCase()
+    : ''
+
+  // Heuristic: only attach MCP tools when the query signals tool use
+  const TOOL_TRIGGERS = [
+    'search', 'find', 'look up', 'lookup', 'google', 'browse',
+    'fetch', 'download', 'scrape', 'url', 'http', 'website',
+    'github', 'repo', 'repository', 'commit', 'pull request', 'issue',
+    'notion', 'database', 'page',
+    'file', 'read file', 'write file', 'directory', 'folder',
+    'what is', 'who is', 'latest', 'news', 'current',
+  ]
+  const needsTools = body.useTools === true ||
+    TOOL_TRIGGERS.some(t => lastUserText.includes(t))
+
   const nativeBody: Record<string, unknown> = {
     model: body.model,
     input,
     stream,
-    integrations,
+    ...(needsTools ? { integrations: ALL_INTEGRATIONS } : {}),
     temperature: body.temperature ?? 0.7,
     max_output_tokens: body.max_tokens ?? 4096,
   }
@@ -108,10 +130,15 @@ export async function POST(req: NextRequest) {
     body: JSON.stringify(nativeBody),
   })
 
-  // If MCP plugins are denied (403), retry without integrations
+  // If MCP plugins are denied (403) or context overflows, retry without integrations
   if (!upstream.ok) {
     const errText = await upstream.text()
-    if (upstream.status === 403 && errText.includes('Permission denied to use plugin')) {
+    const shouldRetryWithout = (
+      (upstream.status === 403 && errText.includes('Permission denied to use plugin')) ||
+      errText.includes('context length') ||
+      errText.includes('initial prompt is greater than')
+    )
+    if (shouldRetryWithout && nativeBody.integrations) {
       delete nativeBody.integrations
       upstream = await fetch(`${lmstudioUrl}/api/v1/chat`, {
         method: 'POST',

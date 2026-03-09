@@ -25,19 +25,19 @@ function ToolCallCard({ call }: { call: ToolCall }) {
   const query = call.arguments?.query as string || call.arguments?.url as string || call.arguments?.path as string || ''
 
   return (
-    <div className="my-3 rounded-xl border border-border bg-surface overflow-hidden">
+    <div className="my-3 rounded-xl border border-border bg-surface/50 overflow-hidden backdrop-blur-sm">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2.5 px-3.5 py-2.5 hover:bg-hover transition-colors text-left"
+        className="w-full flex items-center gap-2.5 px-4 py-3 hover:bg-hover transition-colors text-left"
       >
         <div className={cn(
           'w-7 h-7 rounded-lg flex items-center justify-center shrink-0',
-          call.status === 'calling' ? 'bg-amber-500/10 border border-amber-500/20' :
-          call.status === 'success' ? 'bg-accent/10 border border-accent/20' :
-          'bg-red-500/10 border border-red-500/20'
+          call.status === 'calling' ? 'bg-amber-500/10 border border-amber-500/15' :
+          call.status === 'success' ? 'bg-accent/10 border border-accent/15' :
+          'bg-red-500/10 border border-red-500/15'
         )}>
           {call.status === 'calling' ? (
-            <div className="w-3.5 h-3.5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-3.5 h-3.5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
           ) : (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={call.status === 'success' ? 'text-accent' : 'text-red-400'}>
               <path d={info.icon} />
@@ -45,15 +45,15 @@ function ToolCallCard({ call }: { call: ToolCall }) {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <span className="text-xs font-medium text-primary">{info.label}</span>
-          {query && <span className="text-xs text-tertiary ml-1.5 truncate">— {query}</span>}
+          <span className="text-xs font-semibold text-primary">{info.label}</span>
+          {query && <span className="text-xs text-tertiary ml-2 truncate block mt-0.5">{query}</span>}
         </div>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={cn('text-tertiary transition-transform', expanded && 'rotate-180')}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={cn('text-tertiary transition-transform duration-200', expanded && 'rotate-180')}>
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
       {expanded && call.output && (
-        <div className="px-3.5 pb-3 border-t border-border pt-2.5">
+        <div className="px-4 pb-3 border-t border-border pt-3">
           <pre className="text-[11px] text-secondary font-mono whitespace-pre-wrap break-all max-h-[200px] overflow-y-auto leading-relaxed">
             {call.output.length > 2000 ? call.output.substring(0, 2000) + '...' : call.output}
           </pre>
@@ -76,19 +76,19 @@ function CodeBlock({ children, className }: { children: string; className?: stri
   return (
     <div className="relative my-4 rounded-xl overflow-hidden border border-border bg-code">
       <div className="flex items-center justify-between px-4 py-2.5 bg-code-header border-b border-border">
-        <span className="text-xs font-mono text-tertiary">{language}</span>
+        <span className="text-[11px] font-mono text-tertiary uppercase tracking-wide">{language}</span>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-xs text-tertiary hover:text-primary"
+          className="flex items-center gap-1.5 text-[11px] text-tertiary hover:text-accent transition-colors"
         >
           {copied ? (
             <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="20 6 9 17 4 12" /></svg>
               Copied
             </>
           ) : (
             <>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
               Copy
             </>
           )}
@@ -116,14 +116,14 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
       <div className={cn('max-w-[85%] sm:max-w-[70%]')}>
         {/* Assistant header */}
         {!isUser && (
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
-                <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z" />
-                <circle cx="12" cy="15" r="1.5" />
+          <div className="flex items-center gap-2.5 mb-2.5">
+            <div className="w-7 h-7 rounded-lg bg-accent/10 border border-accent/15 flex items-center justify-center">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" className="text-accent">
+                <path d="M6 20V10C6 6.686 8.686 4 12 4C15.314 4 18 6.686 18 10V20" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
+                <circle cx="12" cy="12.5" r="1.5" fill="currentColor" opacity="0.7"/>
               </svg>
             </div>
-            <span className="text-xs font-medium text-tertiary tracking-wide uppercase">Local AI</span>
+            <span className="text-[11px] font-semibold text-tertiary tracking-wider uppercase">Sanctum</span>
           </div>
         )}
 
@@ -131,7 +131,7 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
         {message.images && message.images.length > 0 && (
           <div className="flex gap-2 mb-3 flex-wrap">
             {message.images.map((img, i) => (
-              <img key={i} src={img} alt="Uploaded" className="max-w-[200px] max-h-[200px] rounded-xl object-cover border border-border" />
+              <img key={i} src={img} alt="Uploaded" className="max-w-[200px] max-h-[200px] rounded-xl object-cover border border-border shadow-md" />
             ))}
           </div>
         )}
@@ -145,9 +145,9 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
           )}
         >
           {isUser ? (
-            <p className="text-[15px] leading-[1.6] whitespace-pre-wrap text-primary">{message.content}</p>
+            <p className="text-[15px] leading-[1.65] whitespace-pre-wrap text-primary">{message.content}</p>
           ) : (
-            <div className="prose prose-sm dark:prose-invert max-w-none text-[15px] leading-[1.7]">
+            <div className="prose prose-sm dark:prose-invert max-w-none text-[15px] leading-[1.75]">
               {message.toolCalls && message.toolCalls.length > 0 && (
                 <div className="not-prose">
                   {message.toolCalls.map((tc, idx) => (
@@ -167,7 +167,7 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
                     return <CodeBlock className={className}>{String(children).replace(/\n$/, '')}</CodeBlock>
                   },
                   a({ href, children }) {
-                    return <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover underline underline-offset-2 decoration-accent/30 hover:decoration-accent">{children}</a>
+                    return <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover underline underline-offset-2 decoration-accent/30 hover:decoration-accent transition-colors">{children}</a>
                   },
                   table({ children }) {
                     return <div className="overflow-x-auto my-4 rounded-xl border border-border"><table className="border-collapse w-full text-sm">{children}</table></div>
@@ -177,6 +177,9 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
                   },
                   td({ children }) {
                     return <td className="border-b border-border px-4 py-2.5 text-sm">{children}</td>
+                  },
+                  blockquote({ children }) {
+                    return <blockquote className="border-l-2 border-accent/40 pl-4 italic text-secondary">{children}</blockquote>
                   },
                 }}
               >
@@ -191,7 +194,7 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
 
         {/* Timestamp */}
         {showTime && (
-          <p className={cn('text-[10px] text-tertiary mt-1.5 font-mono', isUser ? 'text-right' : 'text-left')}>
+          <p className={cn('text-[10px] text-tertiary mt-2 font-mono tracking-wide', isUser ? 'text-right' : 'text-left')}>
             {formatTime(message.timestamp)}
           </p>
         )}

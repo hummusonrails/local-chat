@@ -1,142 +1,106 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <!-- Deep dark background gradient -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0F0F12"/>
-      <stop offset="50%" stop-color="#0A0A0E"/>
-      <stop offset="100%" stop-color="#121218"/>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#100E1C"/>
+      <stop offset="50%" stop-color="#0C0A14"/>
+      <stop offset="100%" stop-color="#14112A"/>
     </linearGradient>
 
-    <!-- Primary accent gradient -->
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#34D399"/>
-      <stop offset="50%" stop-color="#10A37F"/>
-      <stop offset="100%" stop-color="#059669"/>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8C87A"/>
+      <stop offset="40%" stop-color="#D4A054"/>
+      <stop offset="100%" stop-color="#B8843C"/>
     </linearGradient>
 
-    <!-- Glow gradient for the orb -->
-    <radialGradient id="orbGlow" cx="50%" cy="40%" r="50%">
-      <stop offset="0%" stop-color="#10A37F" stop-opacity="0.4"/>
-      <stop offset="60%" stop-color="#10A37F" stop-opacity="0.08"/>
-      <stop offset="100%" stop-color="#10A37F" stop-opacity="0"/>
+    <linearGradient id="goldLight" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#F0D88E"/>
+      <stop offset="100%" stop-color="#D4A054"/>
+    </linearGradient>
+
+    <radialGradient id="glow" cx="50%" cy="45%" r="40%">
+      <stop offset="0%" stop-color="#D4A054" stop-opacity="0.25"/>
+      <stop offset="50%" stop-color="#D4A054" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#D4A054" stop-opacity="0"/>
     </radialGradient>
 
-    <!-- Subtle inner light -->
-    <radialGradient id="innerLight" cx="35%" cy="30%" r="60%">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.06)"/>
-      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    <radialGradient id="innerGlow" cx="50%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="rgba(240, 216, 142, 0.06)"/>
+      <stop offset="100%" stop-color="rgba(240, 216, 142, 0)"/>
     </radialGradient>
 
-    <!-- Blur filter for glow effects -->
-    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="12" result="blur"/>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
 
-    <filter id="bigGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="30"/>
+    <filter id="ambientGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="24"/>
     </filter>
 
-    <!-- Clip for rounded square -->
     <clipPath id="roundClip">
       <rect width="512" height="512" rx="112" ry="112"/>
     </clipPath>
   </defs>
 
   <!-- Background -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
-  <rect width="512" height="512" rx="112" fill="url(#innerLight)"/>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#innerGlow)"/>
 
-  <!-- Ambient glow behind the icon -->
-  <ellipse cx="256" cy="230" rx="160" ry="140" fill="url(#orbGlow)" clip-path="url(#roundClip)"/>
+  <!-- Ambient glow -->
+  <ellipse cx="256" cy="220" rx="140" ry="130" fill="url(#glow)" clip-path="url(#roundClip)"/>
 
-  <!-- Outer ring / orbit arc — top -->
-  <path d="M 160 190 A 120 100 0 0 1 352 190"
-        stroke="url(#accentGrad)" stroke-width="2.5" fill="none" opacity="0.2"
-        stroke-linecap="round"/>
-
-  <!-- Chat bubble — main shape with modern rounded corners -->
+  <!-- Sanctuary arch — main shape -->
   <g filter="url(#softGlow)">
+    <!-- Outer arch -->
     <path d="
-      M 168 168
-      C 168 148, 184 132, 204 132
-      L 308 132
-      C 328 132, 344 148, 344 168
-      L 344 264
-      C 344 284, 328 300, 308 300
-      L 228 300
-      L 192 336
-      L 192 300
-      C 184 300, 176 296, 172 290
-      C 168 284, 168 276, 168 264
-      Z"
-      fill="url(#accentGrad)"
-      opacity="0.95"
-    />
+      M 176 360
+      L 176 220
+      C 176 148, 212 108, 256 108
+      C 300 108, 336 148, 336 220
+      L 336 360
+    "
+    stroke="url(#gold)" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+    <!-- Inner arch -->
+    <path d="
+      M 204 360
+      L 204 230
+      C 204 172, 228 142, 256 142
+      C 284 142, 308 172, 308 230
+      L 308 360
+    "
+    stroke="url(#gold)" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>
+
+    <!-- Keystone accent -->
+    <circle cx="256" cy="108" r="6" fill="url(#goldLight)" opacity="0.9"/>
   </g>
 
-  <!-- Bubble highlight / glass reflection -->
-  <path d="
-    M 184 168
-    C 184 154, 194 144, 208 144
-    L 300 144
-    C 314 144, 324 150, 328 158
-    L 184 158
-    Z"
-    fill="white" opacity="0.12"
-  />
+  <!-- Central light beam -->
+  <line x1="256" y1="160" x2="256" y2="340" stroke="url(#goldLight)" stroke-width="1.5" opacity="0.2" stroke-linecap="round"/>
 
-  <!-- AI brain-circuit dots pattern inside bubble -->
-  <!-- Central node -->
-  <circle cx="256" cy="216" r="14" fill="white" opacity="0.95"/>
-  <circle cx="256" cy="216" r="7" fill="url(#accentGrad)" opacity="0.8"/>
+  <!-- Horizontal threshold line -->
+  <line x1="176" y1="300" x2="336" y2="300" stroke="url(#gold)" stroke-width="2" opacity="0.3" stroke-linecap="round"/>
 
-  <!-- Left node -->
-  <circle cx="208" cy="216" r="10" fill="white" opacity="0.9"/>
-  <circle cx="208" cy="216" r="5" fill="url(#accentGrad)" opacity="0.7"/>
+  <!-- Inner sanctum dot — the warm center -->
+  <circle cx="256" cy="230" r="16" fill="url(#gold)" opacity="0.15"/>
+  <circle cx="256" cy="230" r="8" fill="url(#goldLight)" opacity="0.8"/>
+  <circle cx="256" cy="230" r="4" fill="#F0E0C0" opacity="0.95"/>
 
-  <!-- Right node -->
-  <circle cx="304" cy="216" r="10" fill="white" opacity="0.9"/>
-  <circle cx="304" cy="216" r="5" fill="url(#accentGrad)" opacity="0.7"/>
+  <!-- Radiating light lines from center -->
+  <line x1="244" y1="222" x2="220" y2="200" stroke="#D4A054" stroke-width="1" opacity="0.15" stroke-linecap="round"/>
+  <line x1="268" y1="222" x2="292" y2="200" stroke="#D4A054" stroke-width="1" opacity="0.15" stroke-linecap="round"/>
+  <line x1="248" y1="238" x2="228" y2="264" stroke="#D4A054" stroke-width="1" opacity="0.1" stroke-linecap="round"/>
+  <line x1="264" y1="238" x2="284" y2="264" stroke="#D4A054" stroke-width="1" opacity="0.1" stroke-linecap="round"/>
 
-  <!-- Connecting lines between nodes -->
-  <line x1="218" y1="216" x2="242" y2="216" stroke="white" stroke-width="2.5" opacity="0.5" stroke-linecap="round"/>
-  <line x1="270" y1="216" x2="294" y2="216" stroke="white" stroke-width="2.5" opacity="0.5" stroke-linecap="round"/>
+  <!-- Base platform -->
+  <line x1="156" y1="360" x2="356" y2="360" stroke="url(#gold)" stroke-width="3" opacity="0.4" stroke-linecap="round"/>
 
-  <!-- Top branch lines -->
-  <line x1="256" y1="202" x2="256" y2="180" stroke="white" stroke-width="2" opacity="0.35" stroke-linecap="round"/>
-  <circle cx="256" cy="176" r="4" fill="white" opacity="0.4"/>
-
-  <!-- Diagonal branches -->
-  <line x1="246" y1="207" x2="224" y2="192" stroke="white" stroke-width="1.5" opacity="0.25" stroke-linecap="round"/>
-  <circle cx="222" cy="190" r="3" fill="white" opacity="0.3"/>
-
-  <line x1="266" y1="207" x2="288" y2="192" stroke="white" stroke-width="1.5" opacity="0.25" stroke-linecap="round"/>
-  <circle cx="290" cy="190" r="3" fill="white" opacity="0.3"/>
-
-  <!-- Bottom branches -->
-  <line x1="248" y1="226" x2="230" y2="248" stroke="white" stroke-width="1.5" opacity="0.25" stroke-linecap="round"/>
-  <circle cx="228" cy="250" r="3" fill="white" opacity="0.3"/>
-
-  <line x1="264" y1="226" x2="282" y2="248" stroke="white" stroke-width="1.5" opacity="0.25" stroke-linecap="round"/>
-  <circle cx="284" cy="250" r="3" fill="white" opacity="0.3"/>
-
-  <!-- Streaming signal arcs below bubble -->
-  <g opacity="0.5">
-    <path d="M 240 354 Q 256 338 272 354" stroke="#34D399" stroke-width="3" fill="none" stroke-linecap="round"/>
-  </g>
-  <g opacity="0.3">
-    <path d="M 228 370 Q 256 346 284 370" stroke="#34D399" stroke-width="3" fill="none" stroke-linecap="round"/>
-  </g>
-  <g opacity="0.15">
-    <path d="M 216 386 Q 256 354 296 386" stroke="#34D399" stroke-width="3" fill="none" stroke-linecap="round"/>
-  </g>
-
-  <!-- Subtle sparkle accents -->
-  <circle cx="370" cy="140" r="2" fill="#34D399" opacity="0.4"/>
-  <circle cx="142" cy="360" r="1.5" fill="#34D399" opacity="0.3"/>
-  <circle cx="380" cy="320" r="1.5" fill="#10A37F" opacity="0.25"/>
+  <!-- Subtle star accents -->
+  <circle cx="370" cy="140" r="1.5" fill="#D4A054" opacity="0.35"/>
+  <circle cx="148" cy="168" r="1" fill="#D4A054" opacity="0.25"/>
+  <circle cx="384" cy="290" r="1" fill="#E8C87A" opacity="0.2"/>
+  <circle cx="132" cy="310" r="1.5" fill="#D4A054" opacity="0.15"/>
 </svg>

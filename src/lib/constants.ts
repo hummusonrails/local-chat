@@ -1,6 +1,6 @@
 export const DEFAULT_SETTINGS = {
   theme: 'dark' as const,
-  accentColor: '#10A37F',
+  accentColor: '#D4A054',
   customInstructions: '',
   customContext: '',
   hapticFeedback: true,
@@ -9,16 +9,16 @@ export const DEFAULT_SETTINGS = {
 }
 
 export const ACCENT_COLORS = [
-  { name: 'Green', value: '#10A37F' },
-  { name: 'Blue', value: '#3B82F6' },
-  { name: 'Purple', value: '#8B5CF6' },
-  { name: 'Pink', value: '#EC4899' },
-  { name: 'Orange', value: '#F97316' },
-  { name: 'Yellow', value: '#EAB308' },
+  { name: 'Amber', value: '#D4A054' },
+  { name: 'Rose', value: '#D4737A' },
+  { name: 'Violet', value: '#9B7AD8' },
+  { name: 'Teal', value: '#50B8A6' },
+  { name: 'Sky', value: '#5A9FD4' },
+  { name: 'Coral', value: '#D47B5A' },
 ]
 
 export const STORAGE_KEYS = {
-  settings: 'localchat-settings',
-  activeConversation: 'localchat-active',
-  authToken: 'localchat-auth',
+  settings: 'sanctum-settings',
+  activeConversation: 'sanctum-active',
+  authToken: 'sanctum-auth',
 }
