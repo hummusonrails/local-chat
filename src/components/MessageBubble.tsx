@@ -146,7 +146,7 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
           )}
         >
           {isUser ? (
-            <p className="text-[15px] leading-[1.65] whitespace-pre-wrap text-primary">{message.content}</p>
+            <p className="text-[15px] leading-[1.65] whitespace-pre-wrap text-primary">{message.content || ''}</p>
           ) : (
             <div className="prose prose-sm dark:prose-invert max-w-none text-[15px] leading-[1.75]">
               {message.toolCalls && message.toolCalls.length > 0 && (
@@ -159,6 +159,7 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeHighlight]}
+                children={message.content || ''}
                 components={{
                   code({ className, children, ...props }) {
                     const isInline = !className
@@ -183,9 +184,7 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
                     return <blockquote className="border-l-2 border-accent/40 pl-4 italic text-secondary">{children}</blockquote>
                   },
                 }}
-              >
-                {message.content}
-              </ReactMarkdown>
+              />
               {isStreaming && (
                 <span className="inline-block w-[2px] h-[18px] bg-accent animate-blink ml-0.5 align-text-bottom" />
               )}
