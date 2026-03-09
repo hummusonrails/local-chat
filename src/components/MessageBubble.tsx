@@ -116,7 +116,9 @@ function MessageBubble({ message, isStreaming }: { message: Message; isStreaming
                     return <td className="border-b border-border px-4 py-2.5 text-sm">{children}</td>
                   },
                 }}
-              />
+              >
+                {message.content}
+              </ReactMarkdown>
               {isStreaming && (
                 <span className="inline-block w-[2px] h-[18px] bg-accent animate-blink ml-0.5 align-text-bottom" />
               )}
