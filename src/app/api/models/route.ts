@@ -13,8 +13,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'LM Studio URL not configured' }, { status: 500 })
   }
 
+  const lmApiToken = process.env.LM_API_TOKEN
+  const upstreamHeaders: Record<string, string> = {}
+  if (lmApiToken) {
+    upstreamHeaders['Authorization'] = `Bearer ${lmApiToken}`
+  }
+
   try {
     const res = await fetch(`${lmstudioUrl}/v1/models`, {
+      headers: upstreamHeaders,
       signal: AbortSignal.timeout(10000),
     })
 

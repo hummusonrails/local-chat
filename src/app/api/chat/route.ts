@@ -18,6 +18,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'LM Studio URL not configured' }, { status: 500 })
   }
 
+  const lmApiToken = process.env.LM_API_TOKEN
+  const upstreamHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (lmApiToken) {
+    upstreamHeaders['Authorization'] = `Bearer ${lmApiToken}`
+  }
+
   const body = await req.json()
   const stream = body.stream !== false
 
@@ -98,7 +104,7 @@ export async function POST(req: NextRequest) {
 
   let upstream = await fetch(`${lmstudioUrl}/api/v1/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: upstreamHeaders,
     body: JSON.stringify(nativeBody),
   })
 
@@ -109,7 +115,7 @@ export async function POST(req: NextRequest) {
       delete nativeBody.integrations
       upstream = await fetch(`${lmstudioUrl}/api/v1/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: upstreamHeaders,
         body: JSON.stringify(nativeBody),
       })
     }
