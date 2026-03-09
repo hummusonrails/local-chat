@@ -1,4 +1,4 @@
-const CACHE_NAME = 'local-chat-v1'
+const CACHE_NAME = 'local-chat-v2'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -26,8 +26,8 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
-  // Don't cache API calls to LM Studio
-  if (event.request.url.includes('/v1/')) return
+  // Don't cache API calls
+  if (event.request.url.includes('/v1/') || event.request.url.includes('/api/')) return
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
