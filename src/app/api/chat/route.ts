@@ -96,20 +96,30 @@ export async function POST(req: NextRequest) {
     nativeBody.system_prompt = systemPrompt
   }
 
-  const upstream = await fetch(`${lmstudioUrl}/api/v1/chat`, {
+  let upstream = await fetch(`${lmstudioUrl}/api/v1/chat`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(nativeBody),
   })
 
+  // If MCP plugins are denied (403), retry without integrations
   if (!upstream.ok) {
-    const err = await upstream.text()
-    return NextResponse.json(
-      { error: `LM Studio error ${upstream.status}: ${err}` },
-      { status: upstream.status }
-    )
+    const errText = await upstream.text()
+    if (upstream.status === 403 && errText.includes('Permission denied to use plugin')) {
+      delete nativeBody.integrations
+      upstream = await fetch(`${lmstudioUrl}/api/v1/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nativeBody),
+      })
+    }
+    if (!upstream.ok) {
+      const err = upstream.bodyUsed ? errText : await upstream.text()
+      return NextResponse.json(
+        { error: `LM Studio error ${upstream.status}: ${err}` },
+        { status: upstream.status }
+      )
+    }
   }
 
   if (!stream) {
