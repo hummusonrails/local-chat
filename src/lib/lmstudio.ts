@@ -1,4 +1,4 @@
-import { LMStudioModel, Message, Settings } from './types'
+import { LMStudioModel, Message, Settings, ToolCall } from './types'
 
 function authHeaders(token: string): Record<string, string> {
   return { Authorization: `Bearer ${token}` }
@@ -14,13 +14,25 @@ export async function fetchModels(token: string): Promise<LMStudioModel[]> {
   return (data.data || []).filter((m: LMStudioModel) => !m.id.includes('embed'))
 }
 
+/** Events yielded by the native LM Studio stream parser */
+export type StreamEvent =
+  | { type: 'delta'; content: string }
+  | { type: 'tool_call_start'; tool: string; serverLabel?: string }
+  | { type: 'tool_call_success'; tool: string; arguments: Record<string, unknown>; output: string; serverLabel?: string }
+  | { type: 'tool_call_error'; tool: string; reason: string }
+  | { type: 'done' }
+
+/**
+ * Stream chat via LM Studio's native /api/v1/chat endpoint.
+ * Yields StreamEvent objects for message deltas and tool calls.
+ */
 export async function* streamChat(
   messages: Message[],
   model: string,
   settings: Settings,
   token: string,
   signal?: AbortSignal,
-): AsyncGenerator<string> {
+): AsyncGenerator<StreamEvent> {
   const apiMessages = []
 
   if (settings.customContext || settings.customInstructions) {
@@ -75,7 +87,26 @@ export async function* streamChat(
 
   if (!settings.streamResponses) {
     const data = await res.json()
-    yield data.choices?.[0]?.message?.content || ''
+    // Non-streaming native API returns { output: [...] }
+    for (const item of data.output || []) {
+      if (item.type === 'message') {
+        yield { type: 'delta', content: item.content || '' }
+      } else if (item.type === 'tool_call') {
+        yield {
+          type: 'tool_call_start',
+          tool: item.tool,
+          serverLabel: item.provider_info?.server_label || item.provider_info?.plugin_id,
+        }
+        yield {
+          type: 'tool_call_success',
+          tool: item.tool,
+          arguments: item.arguments || {},
+          output: item.output || '',
+          serverLabel: item.provider_info?.server_label || item.provider_info?.plugin_id,
+        }
+      }
+    }
+    yield { type: 'done' }
     return
   }
 
@@ -90,24 +121,83 @@ export async function* streamChat(
     if (done) break
 
     buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
-    buffer = lines.pop() || ''
 
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (!trimmed || !trimmed.startsWith('data: ')) continue
-      const data = trimmed.slice(6)
-      if (data === '[DONE]') return
+    // Parse named SSE events: "event: <type>\ndata: <json>\n\n"
+    // Split on double-newline to get complete events
+    const events = buffer.split('\n\n')
+    buffer = events.pop() || '' // last item may be incomplete
+
+    for (const rawEvent of events) {
+      if (!rawEvent.trim()) continue
+
+      let eventType = ''
+      let eventData = ''
+
+      for (const line of rawEvent.split('\n')) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7).trim()
+        } else if (line.startsWith('data: ')) {
+          eventData += line.slice(6)
+        } else if (line.startsWith('data:')) {
+          eventData += line.slice(5)
+        }
+      }
+
+      if (!eventData) continue
 
       try {
-        const parsed = JSON.parse(data)
-        const delta = parsed.choices?.[0]?.delta?.content
-        if (delta) yield delta
-      } catch {
-        // skip malformed chunks
+        const parsed = JSON.parse(eventData)
+
+        switch (eventType || parsed.type) {
+          case 'message.delta':
+            if (parsed.content) {
+              yield { type: 'delta', content: parsed.content }
+            }
+            break
+
+          case 'tool_call.start':
+            yield {
+              type: 'tool_call_start',
+              tool: parsed.tool,
+              serverLabel: parsed.provider_info?.server_label || parsed.provider_info?.plugin_id,
+            }
+            break
+
+          case 'tool_call.success':
+            yield {
+              type: 'tool_call_success',
+              tool: parsed.tool,
+              arguments: parsed.arguments || {},
+              output: parsed.output || '',
+              serverLabel: parsed.provider_info?.server_label || parsed.provider_info?.plugin_id,
+            }
+            break
+
+          case 'tool_call.failure':
+            yield {
+              type: 'tool_call_error',
+              tool: parsed.metadata?.tool_name || 'unknown',
+              reason: parsed.reason || 'Tool call failed',
+            }
+            break
+
+          case 'chat.end':
+            yield { type: 'done' }
+            return
+
+          case 'error':
+            throw new Error(parsed.error?.message || 'LM Studio stream error')
+
+          // Ignore: chat.start, model_load.*, prompt_processing.*, reasoning.*, message.start, message.end, tool_call.arguments
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message.includes('LM Studio')) throw e
+        // skip malformed events
       }
     }
   }
+
+  yield { type: 'done' }
 }
 
 export async function checkConnection(token: string): Promise<boolean> {

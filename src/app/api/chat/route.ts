@@ -4,9 +4,10 @@ import { validateAuth } from '@/lib/auth'
 export const runtime = 'edge'
 
 /**
- * POST /api/chat — proxy chat completions to LM Studio.
+ * POST /api/chat — proxy to LM Studio's native REST API.
+ * Translates the client request to LM Studio's /api/v1/chat format,
+ * which supports MCP tool integrations (Brave Search, GitHub, etc.).
  * The LMSTUDIO_URL env var holds the Cloudflare tunnel URL.
- * This route ensures the tunnel URL never reaches the client.
  */
 export async function POST(req: NextRequest) {
   const authError = validateAuth(req)
@@ -20,13 +21,62 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const stream = body.stream !== false
 
-  const upstream = await fetch(`${lmstudioUrl}/v1/chat/completions`, {
+  // Build input for native API from OpenAI-style messages
+  const input: Array<{ type: string; content?: string; data_url?: string }> = []
+  let systemPrompt = ''
+
+  for (const msg of body.messages || []) {
+    if (msg.role === 'system') {
+      systemPrompt += (systemPrompt ? '\n\n' : '') + (typeof msg.content === 'string' ? msg.content : '')
+      continue
+    }
+    if (msg.role === 'user') {
+      // Handle multimodal content (images + text)
+      if (Array.isArray(msg.content)) {
+        for (const part of msg.content) {
+          if (part.type === 'image_url' && part.image_url?.url) {
+            input.push({ type: 'image', data_url: part.image_url.url })
+          } else if (part.type === 'text') {
+            input.push({ type: 'message', content: part.text })
+          }
+        }
+      } else {
+        input.push({ type: 'message', content: msg.content })
+      }
+    } else if (msg.role === 'assistant') {
+      // Include prior assistant messages as context
+      input.push({ type: 'message', content: `[Assistant]: ${msg.content}` })
+    }
+  }
+
+  // MCP integrations — all configured servers
+  const integrations = [
+    'mcp/brave-search',
+    'mcp/fetch',
+    'mcp/github',
+    'mcp/notion',
+    'mcp/filesystem',
+  ]
+
+  const nativeBody: Record<string, unknown> = {
+    model: body.model,
+    input,
+    stream,
+    integrations,
+    temperature: body.temperature ?? 0.7,
+    max_output_tokens: body.max_tokens ?? 4096,
+  }
+
+  if (systemPrompt) {
+    nativeBody.system_prompt = systemPrompt
+  }
+
+  const upstream = await fetch(`${lmstudioUrl}/api/v1/chat`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: 'Bearer lm-studio',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(nativeBody),
   })
 
   if (!upstream.ok) {
@@ -42,10 +92,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data)
   }
 
-  // Read the entire SSE stream from LM Studio, then re-emit as a ReadableStream.
-  // This avoids TransformStream issues on Vercel's serverless runtime.
-  const encoder = new TextEncoder()
-
+  // Pass through the SSE stream from LM Studio's native API
   const readable = new ReadableStream({
     async start(controller) {
       const reader = upstream.body?.getReader()
@@ -53,14 +100,15 @@ export async function POST(req: NextRequest) {
         controller.close()
         return
       }
+      const encoder = new TextEncoder()
       try {
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
           controller.enqueue(value)
         }
-      } catch (err) {
-        controller.enqueue(encoder.encode(`data: {"error":"Stream interrupted"}\n\n`))
+      } catch {
+        controller.enqueue(encoder.encode(`event: error\ndata: {"type":"error","error":{"message":"Stream interrupted"}}\n\n`))
       } finally {
         controller.close()
       }

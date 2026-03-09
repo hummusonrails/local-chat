@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { v4 as uuidv4 } from 'uuid'
-import { Conversation, Message, Settings, LMStudioModel } from './types'
+import { Conversation, Message, Settings, LMStudioModel, ToolCall } from './types'
 import { DEFAULT_SETTINGS } from './constants'
 import {
   loadSettings, saveSettings,
@@ -35,6 +35,7 @@ interface AppState {
   // Streaming
   isStreaming: boolean
   streamingContent: string
+  streamingToolCalls: ToolCall[]
   abortController: AbortController | null
 
   // Actions
@@ -58,9 +59,11 @@ interface AppState {
 
   // Message actions
   addMessage: (conversationId: string, message: Message) => void
-  updateLastAssistantMessage: (conversationId: string, content: string) => void
+  updateLastAssistantMessage: (conversationId: string, content: string, toolCalls?: ToolCall[]) => void
   setStreaming: (streaming: boolean, content?: string, controller?: AbortController | null) => void
   appendStreamContent: (chunk: string) => void
+  addStreamingToolCall: (toolCall: ToolCall) => void
+  updateLastStreamingToolCall: (update: Partial<ToolCall>) => void
   stopStreaming: () => void
 }
 
@@ -102,6 +105,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   isStreaming: false,
   streamingContent: '',
+  streamingToolCalls: [],
   abortController: null,
 
   init: async () => {
@@ -207,13 +211,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     persistConversations({ ...get(), conversations: updated })
   },
 
-  updateLastAssistantMessage: (conversationId, content) => {
+  updateLastAssistantMessage: (conversationId, content, toolCalls) => {
     const updated = get().conversations.map(c => {
       if (c.id !== conversationId) return c
       const messages = [...c.messages]
       const lastIdx = messages.findLastIndex(m => m.role === 'assistant')
       if (lastIdx >= 0) {
-        messages[lastIdx] = { ...messages[lastIdx], content }
+        messages[lastIdx] = { ...messages[lastIdx], content, ...(toolCalls ? { toolCalls } : {}) }
       }
       return { ...c, messages, updatedAt: Date.now() }
     })
@@ -222,11 +226,25 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setStreaming: (streaming, content = '', controller = null) => {
-    set({ isStreaming: streaming, streamingContent: content || '', abortController: controller })
+    set({ isStreaming: streaming, streamingContent: content || '', streamingToolCalls: [], abortController: controller })
   },
 
   appendStreamContent: (chunk) => {
     set(state => ({ streamingContent: state.streamingContent + chunk }))
+  },
+
+  addStreamingToolCall: (toolCall) => {
+    set(state => ({ streamingToolCalls: [...state.streamingToolCalls, toolCall] }))
+  },
+
+  updateLastStreamingToolCall: (update) => {
+    set(state => {
+      const calls = [...state.streamingToolCalls]
+      if (calls.length > 0) {
+        calls[calls.length - 1] = { ...calls[calls.length - 1], ...update }
+      }
+      return { streamingToolCalls: calls }
+    })
   },
 
   stopStreaming: () => {

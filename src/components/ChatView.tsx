@@ -10,9 +10,9 @@ import TypingIndicator from './TypingIndicator'
 
 export default function ChatView() {
   const {
-    activeConversation, activeModel, settings, isStreaming, streamingContent,
-    addMessage, setStreaming, appendStreamContent, updateLastAssistantMessage,
-    createConversation, activeConversationId, connected, authToken,
+    activeConversation, activeModel, settings, isStreaming, streamingContent, streamingToolCalls,
+    addMessage, setStreaming, appendStreamContent, addStreamingToolCall, updateLastStreamingToolCall,
+    updateLastAssistantMessage, createConversation, activeConversationId, connected, authToken,
   } = useAppStore()
 
   const [input, setInput] = useState('')
@@ -33,7 +33,7 @@ export default function ChatView() {
     if (autoScroll && (isStreaming || conv?.messages.length)) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [streamingContent, isStreaming, conv?.messages.length, autoScroll])
+  }, [streamingContent, streamingToolCalls, isStreaming, conv?.messages.length, autoScroll])
 
   const handleScroll = useCallback(() => {
     const el = scrollContainerRef.current
@@ -97,20 +97,56 @@ export default function ChatView() {
 
     try {
       let fullContent = ''
-      for await (const chunk of streamChat(
+      const toolCalls: import('@/lib/types').ToolCall[] = []
+
+      for await (const event of streamChat(
         currentConv.messages.concat(userMsg),
         activeModel,
         settings,
         authToken!,
         controller.signal,
       )) {
-        fullContent += chunk
-        appendStreamContent(chunk)
-        if (settings.hapticFeedback && fullContent.length % 20 === 0) {
-          haptic('light')
+        switch (event.type) {
+          case 'delta':
+            fullContent += event.content
+            appendStreamContent(event.content)
+            if (settings.hapticFeedback && fullContent.length % 20 === 0) {
+              haptic('light')
+            }
+            break
+          case 'tool_call_start': {
+            const tc: import('@/lib/types').ToolCall = {
+              tool: event.tool,
+              arguments: {},
+              status: 'calling',
+              serverLabel: event.serverLabel,
+            }
+            toolCalls.push(tc)
+            addStreamingToolCall(tc)
+            break
+          }
+          case 'tool_call_success':
+            if (toolCalls.length > 0) {
+              const last = toolCalls[toolCalls.length - 1]
+              last.arguments = event.arguments
+              last.output = event.output
+              last.status = 'success'
+              updateLastStreamingToolCall({ arguments: event.arguments, output: event.output, status: 'success' })
+            }
+            break
+          case 'tool_call_error':
+            if (toolCalls.length > 0) {
+              const last = toolCalls[toolCalls.length - 1]
+              last.output = event.reason
+              last.status = 'error'
+              updateLastStreamingToolCall({ output: event.reason, status: 'error' })
+            }
+            break
+          case 'done':
+            break
         }
       }
-      updateLastAssistantMessage(convId, fullContent)
+      updateLastAssistantMessage(convId, fullContent, toolCalls.length > 0 ? toolCalls : undefined)
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') {
         const current = useAppStore.getState().streamingContent
@@ -216,7 +252,7 @@ export default function ChatView() {
             return (
               <MessageBubble
                 key={msg.id}
-                message={isLastAssistant ? { ...msg, content: streamingContent } : msg}
+                message={isLastAssistant ? { ...msg, content: streamingContent, toolCalls: streamingToolCalls.length > 0 ? streamingToolCalls : msg.toolCalls } : msg}
                 isStreaming={isLastAssistant}
               />
             )
