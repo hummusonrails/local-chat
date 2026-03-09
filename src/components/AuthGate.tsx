@@ -40,16 +40,16 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-[100dvh] flex items-center justify-center bg-background px-6">
-      <div className="w-full max-w-[320px]">
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-accent/20 flex items-center justify-center mb-4">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-accent">
+      <div className="w-full max-w-[340px]">
+        <div className="flex flex-col items-center mb-10">
+          <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-5">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </div>
-          <h1 className="text-xl font-semibold text-primary">Local Chat</h1>
-          <p className="text-sm text-tertiary mt-1">Enter password to continue</p>
+          <h1 className="text-2xl font-semibold text-primary tracking-tight">Local Chat</h1>
+          <p className="text-sm text-tertiary mt-2">Enter your password to continue</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -60,7 +60,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             placeholder="Password"
             autoFocus
             autoComplete="current-password"
-            className="w-full bg-input border border-border rounded-xl px-4 py-3 text-primary text-center text-lg tracking-widest placeholder:text-tertiary placeholder:tracking-normal focus:outline-none focus:border-accent transition-colors"
+            className="w-full bg-surface border border-border rounded-xl px-4 py-3.5 text-primary text-center text-base tracking-widest placeholder:text-tertiary placeholder:tracking-normal focus:outline-none focus:border-border-strong focus:ring-1 focus:ring-accent/20"
           />
 
           {error && (
@@ -70,14 +70,14 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           <button
             type="submit"
             disabled={loading || !password.trim()}
-            className="w-full py-3 rounded-xl bg-accent text-white font-medium disabled:opacity-40 transition-opacity"
+            className="w-full py-3.5 rounded-xl bg-accent hover:bg-accent-hover text-white font-medium disabled:opacity-30"
           >
             {loading ? 'Signing in...' : 'Continue'}
           </button>
         </form>
 
-        <p className="text-center text-[11px] text-tertiary mt-6">
-          All data stays private. Powered by your local LM Studio.
+        <p className="text-center text-[11px] text-tertiary/60 mt-8 leading-relaxed">
+          All data stays private.<br />Powered by your local LM Studio instance.
         </p>
       </div>
     </div>

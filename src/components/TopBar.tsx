@@ -12,27 +12,31 @@ export default function TopBar() {
   const conv = activeConversation()
 
   return (
-    <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-background/80 backdrop-blur-xl pt-[env(safe-area-inset-top,8px)]">
-      {/* Hamburger */}
+    <div className="flex items-center justify-between px-2 py-1.5 border-b border-border bg-background/90 backdrop-blur-2xl pt-[env(safe-area-inset-top,6px)]">
+      {/* Sidebar toggle */}
       <button
         onClick={() => { setSidebarOpen(true); haptic('light') }}
-        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-hover transition-colors"
+        className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-hover active:bg-active"
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-secondary">
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="18" x2="21" y2="18" />
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className="text-secondary">
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <line x1="9" y1="3" x2="9" y2="21" />
         </svg>
       </button>
 
       {/* Model picker */}
       <button
         onClick={() => { setModelPickerOpen(true); haptic('light') }}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-hover transition-colors max-w-[200px]"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-hover active:bg-active max-w-[220px]"
       >
-        <div className={cn('w-2 h-2 rounded-full', connected ? 'bg-green-500' : 'bg-red-500')} />
-        <span className="text-sm font-semibold text-primary truncate">
-          {activeModel || 'Select Model'}
+        <div className={cn(
+          'w-2 h-2 rounded-full ring-2',
+          connected
+            ? 'bg-emerald-500 ring-emerald-500/20'
+            : 'bg-red-500 ring-red-500/20'
+        )} />
+        <span className="text-sm font-medium text-primary truncate">
+          {activeModel ? activeModel.split('/').pop()?.replace(/-/g, ' ') : 'Select Model'}
         </span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-tertiary shrink-0">
           <polyline points="6 9 12 15 18 9" />
@@ -42,10 +46,10 @@ export default function TopBar() {
       {/* New chat */}
       <button
         onClick={() => { createConversation(); haptic('medium') }}
-        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-hover transition-colors"
+        className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-hover active:bg-active"
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-secondary">
-          <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-secondary">
+          <path d="M12 5v14M5 12h14" />
         </svg>
       </button>
     </div>

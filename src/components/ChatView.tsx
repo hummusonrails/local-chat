@@ -29,14 +29,12 @@ export default function ChatView() {
 
   const conv = activeConversation()
 
-  // Auto-scroll during streaming
   useEffect(() => {
     if (autoScroll && (isStreaming || conv?.messages.length)) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [streamingContent, isStreaming, conv?.messages.length, autoScroll])
 
-  // Detect manual scroll
   const handleScroll = useCallback(() => {
     const el = scrollContainerRef.current
     if (!el) return
@@ -44,7 +42,6 @@ export default function ChatView() {
     setAutoScroll(isAtBottom)
   }, [])
 
-  // Auto-resize textarea
   useEffect(() => {
     const ta = textareaRef.current
     if (ta) {
@@ -84,7 +81,6 @@ export default function ChatView() {
     setImages([])
     setAutoScroll(true)
 
-    // Get updated conversation
     const currentConv = useAppStore.getState().conversations.find(c => c.id === convId)
     if (!currentConv) return
 
@@ -191,33 +187,30 @@ export default function ChatView() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages area */}
+      {/* Messages */}
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 pt-4 pb-2"
+        className="flex-1 overflow-y-auto px-4 pt-6 pb-2"
       >
         {messages.length === 0 && !isStreaming && (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mb-4">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-accent">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-                <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="3" strokeLinecap="round" />
-                <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="3" strokeLinecap="round" />
+          <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in">
+            <div className="w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-5">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
             </div>
-            <h2 className="text-lg font-semibold text-primary mb-1">How can I help?</h2>
-            <p className="text-sm text-tertiary max-w-[280px]">
+            <h2 className="text-xl font-semibold text-primary mb-2 tracking-tight">What can I help with?</h2>
+            <p className="text-sm text-tertiary max-w-[300px] leading-relaxed">
               {connected
-                ? `Using ${activeModel || 'local model'}`
+                ? `Connected to ${activeModel ? activeModel.split('/').pop() : 'local model'}`
                 : 'Connect to LM Studio to start chatting'
               }
             </p>
           </div>
         )}
 
-        <div className="max-w-[720px] mx-auto">
+        <div className="max-w-[740px] mx-auto">
           {messages.map((msg, i) => {
             const isLastAssistant = i === messages.length - 1 && msg.role === 'assistant' && isStreaming
             return (
@@ -237,104 +230,109 @@ export default function ChatView() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Scroll to bottom button */}
+      {/* Scroll to bottom */}
       {!autoScroll && (
         <button
           onClick={scrollToBottom}
-          className="absolute bottom-24 right-4 w-9 h-9 rounded-full bg-surface border border-border shadow-lg flex items-center justify-center hover:bg-hover transition-colors z-10"
+          className="absolute bottom-28 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-surface border border-border shadow-md flex items-center gap-1.5 hover:bg-hover z-10 animate-fade-in"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-secondary">
             <polyline points="6 9 12 15 18 9" />
           </svg>
+          <span className="text-xs text-secondary font-medium">New messages</span>
         </button>
       )}
 
       {/* Image previews */}
       {images.length > 0 && (
-        <div className="px-4 pb-2 flex gap-2 overflow-x-auto">
-          {images.map((img, i) => (
-            <div key={i} className="relative shrink-0">
-              <img src={img} alt="" className="w-16 h-16 rounded-xl object-cover" />
-              <button
-                onClick={() => setImages(prev => prev.filter((_, j) => j !== i))}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center"
-              >
-                x
-              </button>
-            </div>
-          ))}
+        <div className="px-4 pb-2">
+          <div className="max-w-[740px] mx-auto flex gap-2 overflow-x-auto">
+            {images.map((img, i) => (
+              <div key={i} className="relative shrink-0 group">
+                <img src={img} alt="" className="w-16 h-16 rounded-xl object-cover border border-border" />
+                <button
+                  onClick={() => setImages(prev => prev.filter((_, j) => j !== i))}
+                  className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-primary text-background text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* Composer */}
       <div className="px-3 pb-[env(safe-area-inset-bottom,8px)] pt-2">
-        <div className="max-w-[720px] mx-auto flex items-end gap-2 bg-input border border-border rounded-3xl px-3 py-2 focus-within:border-accent transition-colors">
-          {/* Attachment */}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full hover:bg-hover transition-colors"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-secondary">
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleImageUpload}
-            className="hidden"
-          />
+        <div className="max-w-[740px] mx-auto">
+          <div className="flex items-end gap-1.5 bg-surface border border-border rounded-2xl px-3 py-2 focus-within:border-border-strong focus-within:shadow-sm transition-all">
+            {/* Attachment */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl hover:bg-hover"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-tertiary">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+            />
 
-          {/* Text input */}
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Message"
-            rows={1}
-            className="flex-1 bg-transparent text-[15px] text-primary placeholder:text-tertiary resize-none focus:outline-none max-h-[150px] py-1 leading-relaxed"
-          />
+            {/* Text input */}
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Message Local Chat..."
+              rows={1}
+              className="flex-1 bg-transparent text-[15px] text-primary placeholder:text-tertiary resize-none focus:outline-none max-h-[150px] py-1.5 leading-relaxed"
+            />
 
-          {/* Voice / Send */}
-          {input.trim() || images.length > 0 ? (
-            <button
-              onClick={handleSend}
-              disabled={isStreaming || !connected}
-              className="shrink-0 w-8 h-8 rounded-full bg-accent flex items-center justify-center disabled:opacity-40 transition-all animate-scale-in"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
-              </svg>
-            </button>
-          ) : isStreaming ? (
-            <button
-              onClick={() => useAppStore.getState().stopStreaming()}
-              className="shrink-0 w-8 h-8 rounded-full bg-red-500 flex items-center justify-center animate-scale-in"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-                <rect x="6" y="6" width="12" height="12" rx="2" />
-              </svg>
-            </button>
-          ) : (
-            <button
-              onClick={toggleVoice}
-              className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isRecording ? 'bg-red-500' : 'hover:bg-hover'}`}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isRecording ? 'white' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={isRecording ? '' : 'text-secondary'}>
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                <line x1="12" y1="19" x2="12" y2="23" />
-                <line x1="8" y1="23" x2="16" y2="23" />
-              </svg>
-            </button>
-          )}
+            {/* Voice / Send */}
+            {input.trim() || images.length > 0 ? (
+              <button
+                onClick={handleSend}
+                disabled={isStreaming || !connected}
+                className="shrink-0 w-9 h-9 rounded-xl bg-accent hover:bg-accent-hover flex items-center justify-center disabled:opacity-30 animate-scale-in"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                  <path d="M7 11L12 6L17 11M12 18V7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                </svg>
+              </button>
+            ) : isStreaming ? (
+              <button
+                onClick={() => useAppStore.getState().stopStreaming()}
+                className="shrink-0 w-9 h-9 rounded-xl bg-primary/10 border border-border flex items-center justify-center animate-scale-in"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-primary">
+                  <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                onClick={toggleVoice}
+                className={`shrink-0 w-9 h-9 flex items-center justify-center rounded-xl ${isRecording ? 'bg-red-500' : 'hover:bg-hover'}`}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isRecording ? 'white' : 'currentColor'} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={isRecording ? '' : 'text-tertiary'}>
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <p className="text-center text-[10px] text-tertiary/60 mt-2 font-medium tracking-wide">
+            Powered by LM Studio &middot; Running locally
+          </p>
         </div>
-        <p className="text-center text-[10px] text-tertiary mt-1.5">
-          Running locally via LM Studio
-        </p>
       </div>
     </div>
   )

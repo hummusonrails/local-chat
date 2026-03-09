@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAppStore } from '@/lib/store'
 import { ACCENT_COLORS } from '@/lib/constants'
 import { checkConnection } from '@/lib/lmstudio'
@@ -36,40 +36,42 @@ export default function Settings() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border pt-[env(safe-area-inset-top,12px)]">
-        <button onClick={() => setSettingsOpen(false)} className="text-accent text-sm font-medium">Done</button>
-        <h2 className="text-base font-semibold text-primary">Settings</h2>
+      <div className="flex items-center justify-between px-5 py-3 border-b border-border pt-[env(safe-area-inset-top,12px)]">
+        <button onClick={() => setSettingsOpen(false)} className="text-accent text-sm font-medium hover:text-accent-hover">Done</button>
+        <h2 className="text-sm font-semibold text-primary tracking-tight">Settings</h2>
         <div className="w-10" />
       </div>
 
       <div className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom,16px)]">
         {/* Connection */}
         <section className="px-4 pt-6">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-tertiary mb-2 px-1">LM Studio Connection</h3>
-          <div className="bg-surface rounded-xl overflow-hidden">
-            <div className="px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-tertiary mb-2.5 px-1">Connection</h3>
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="px-4 py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
                 <div className={cn(
-                  'w-2.5 h-2.5 rounded-full',
-                  connected ? 'bg-green-500' : 'bg-red-500'
+                  'w-2 h-2 rounded-full ring-2',
+                  connected
+                    ? 'bg-emerald-500 ring-emerald-500/20'
+                    : 'bg-red-500 ring-red-500/20'
                 )} />
-                <span className="text-sm text-secondary">
+                <span className="text-sm text-primary font-medium">
                   {connected ? 'Connected' : 'Disconnected'}
                 </span>
               </div>
               <button
                 onClick={handleTestConnection}
                 disabled={testingConnection}
-                className="px-3 py-1.5 text-xs bg-accent text-white rounded-lg disabled:opacity-50"
+                className="px-3 py-1.5 text-xs font-medium bg-accent hover:bg-accent-hover text-white rounded-lg disabled:opacity-40"
               >
-                {testingConnection ? 'Testing...' : 'Test Connection'}
+                {testingConnection ? 'Testing...' : 'Test'}
               </button>
             </div>
             {connectionResult !== null && (
-              <div className={cn('px-4 py-2 text-xs', connectionResult ? 'text-green-500' : 'text-red-500')}>
-                {connectionResult ? 'Connection successful!' : 'Connection failed. Ensure LM Studio is running.'}
+              <div className={cn('px-4 py-2.5 text-xs border-t border-border', connectionResult ? 'text-emerald-500' : 'text-red-400')}>
+                {connectionResult ? 'Connection successful' : 'Connection failed — ensure LM Studio is running'}
               </div>
             )}
           </div>
@@ -77,18 +79,20 @@ export default function Settings() {
 
         {/* Appearance */}
         <section className="px-4 pt-6">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-tertiary mb-2 px-1">Appearance</h3>
-          <div className="bg-surface rounded-xl overflow-hidden">
-            <div className="px-4 py-3">
-              <label className="text-sm text-primary mb-2 block">Theme</label>
-              <div className="flex gap-2">
+          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-tertiary mb-2.5 px-1">Appearance</h3>
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="px-4 py-3.5">
+              <label className="text-sm text-primary font-medium mb-2.5 block">Theme</label>
+              <div className="flex gap-1.5 bg-input rounded-lg p-1">
                 {(['light', 'dark', 'system'] as const).map(theme => (
                   <button
                     key={theme}
                     onClick={() => updateSettings({ theme })}
                     className={cn(
-                      'flex-1 py-2 rounded-lg text-sm capitalize transition-colors',
-                      settings.theme === theme ? 'bg-accent text-white' : 'bg-input text-secondary'
+                      'flex-1 py-2 rounded-md text-xs font-medium capitalize',
+                      settings.theme === theme
+                        ? 'bg-accent text-white shadow-sm'
+                        : 'text-secondary hover:text-primary'
                     )}
                   >
                     {theme}
@@ -96,8 +100,8 @@ export default function Settings() {
                 ))}
               </div>
             </div>
-            <div className="px-4 py-3 border-t border-border">
-              <label className="text-sm text-primary mb-2 block">Accent Color</label>
+            <div className="px-4 py-3.5 border-t border-border">
+              <label className="text-sm text-primary font-medium mb-2.5 block">Accent</label>
               <div className="flex gap-3">
                 {ACCENT_COLORS.map(color => (
                   <button
@@ -107,8 +111,8 @@ export default function Settings() {
                       haptic('light')
                     }}
                     className={cn(
-                      'w-8 h-8 rounded-full transition-transform',
-                      settings.accentColor === color.value && 'ring-2 ring-offset-2 ring-offset-background scale-110'
+                      'w-7 h-7 rounded-full transition-all',
+                      settings.accentColor === color.value && 'ring-2 ring-offset-2 ring-offset-surface scale-110'
                     )}
                     style={{ backgroundColor: color.value, '--tw-ring-color': color.value } as React.CSSProperties}
                     title={color.name}
@@ -121,57 +125,57 @@ export default function Settings() {
 
         {/* Personalization */}
         <section className="px-4 pt-6">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-tertiary mb-2 px-1">Personalization</h3>
-          <div className="bg-surface rounded-xl overflow-hidden">
-            <div className="px-4 py-3">
-              <label className="text-sm text-primary mb-1 block">About you</label>
-              <p className="text-[11px] text-tertiary mb-2">What should the AI know about you?</p>
+          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-tertiary mb-2.5 px-1">Personalization</h3>
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="px-4 py-3.5">
+              <label className="text-sm text-primary font-medium mb-0.5 block">About you</label>
+              <p className="text-[11px] text-tertiary mb-2.5">What should the AI know about you?</p>
               <textarea
                 value={settings.customContext}
                 onChange={e => updateSettings({ customContext: e.target.value })}
                 rows={3}
                 maxLength={1500}
-                className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-primary resize-none focus:outline-none focus:border-accent"
+                className="w-full bg-input border border-border rounded-lg px-3 py-2.5 text-sm text-primary resize-none focus:outline-none focus:border-border-strong"
                 placeholder="e.g. I'm a software engineer who works with TypeScript..."
               />
-              <p className="text-[10px] text-tertiary text-right">{settings.customContext.length}/1500</p>
+              <p className="text-[10px] text-tertiary text-right mt-1 font-mono">{settings.customContext.length}/1500</p>
             </div>
-            <div className="px-4 py-3 border-t border-border">
-              <label className="text-sm text-primary mb-1 block">Response instructions</label>
-              <p className="text-[11px] text-tertiary mb-2">How should the AI respond?</p>
+            <div className="px-4 py-3.5 border-t border-border">
+              <label className="text-sm text-primary font-medium mb-0.5 block">Response instructions</label>
+              <p className="text-[11px] text-tertiary mb-2.5">How should the AI respond?</p>
               <textarea
                 value={settings.customInstructions}
                 onChange={e => updateSettings({ customInstructions: e.target.value })}
                 rows={3}
                 maxLength={1500}
-                className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-primary resize-none focus:outline-none focus:border-accent"
+                className="w-full bg-input border border-border rounded-lg px-3 py-2.5 text-sm text-primary resize-none focus:outline-none focus:border-border-strong"
                 placeholder="e.g. Be concise. Use code examples when relevant..."
               />
-              <p className="text-[10px] text-tertiary text-right">{settings.customInstructions.length}/1500</p>
+              <p className="text-[10px] text-tertiary text-right mt-1 font-mono">{settings.customInstructions.length}/1500</p>
             </div>
           </div>
         </section>
 
         {/* Behavior */}
         <section className="px-4 pt-6">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-tertiary mb-2 px-1">Behavior</h3>
-          <div className="bg-surface rounded-xl overflow-hidden">
+          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-tertiary mb-2.5 px-1">Behavior</h3>
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
             <ToggleRow
               label="Stream responses"
-              description="Show responses as they're generated"
+              description="Show responses as they generate"
               value={settings.streamResponses}
               onChange={v => updateSettings({ streamResponses: v })}
             />
             <ToggleRow
               label="Send on Enter"
-              description="Press Enter to send, Shift+Enter for new line"
+              description="Enter to send, Shift+Enter for new line"
               value={settings.sendOnEnter}
               onChange={v => updateSettings({ sendOnEnter: v })}
               borderTop
             />
             <ToggleRow
               label="Haptic feedback"
-              description="Vibration during streaming and actions"
+              description="Vibration on actions"
               value={settings.hapticFeedback}
               onChange={v => updateSettings({ hapticFeedback: v })}
               borderTop
@@ -181,25 +185,25 @@ export default function Settings() {
 
         {/* Data */}
         <section className="px-4 pt-6 pb-8">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-tertiary mb-2 px-1">Data</h3>
-          <div className="bg-surface rounded-xl overflow-hidden">
-            <div className="px-4 py-3 flex items-center justify-between">
+          <h3 className="text-[10px] font-semibold uppercase tracking-widest text-tertiary mb-2.5 px-1">Account</h3>
+          <div className="bg-surface border border-border rounded-xl overflow-hidden">
+            <div className="px-4 py-3.5 flex items-center justify-between">
               <span className="text-sm text-primary">Conversations</span>
-              <span className="text-sm text-tertiary">{conversations.length}</span>
+              <span className="text-sm text-tertiary font-mono">{conversations.length}</span>
             </div>
-            <div className="px-4 py-3 border-t border-border">
-              <button onClick={handleClearAll} className="text-sm text-red-500">
+            <div className="px-4 py-3.5 border-t border-border">
+              <button onClick={handleClearAll} className="text-sm text-red-400 hover:text-red-300">
                 Delete all conversations
               </button>
             </div>
-            <div className="px-4 py-3 border-t border-border">
-              <button onClick={handleLogout} className="text-sm text-red-500">
+            <div className="px-4 py-3.5 border-t border-border">
+              <button onClick={handleLogout} className="text-sm text-red-400 hover:text-red-300">
                 Sign out
               </button>
             </div>
           </div>
-          <p className="text-[11px] text-tertiary mt-3 px-1">
-            Conversations are stored securely on the server. All AI processing runs on your local LM Studio instance.
+          <p className="text-[11px] text-tertiary/50 mt-3 px-1 leading-relaxed">
+            Conversations synced securely. AI runs on your local LM Studio.
           </p>
         </section>
       </div>
@@ -215,21 +219,21 @@ function ToggleRow({ label, description, value, onChange, borderTop }: {
   borderTop?: boolean
 }) {
   return (
-    <div className={cn('px-4 py-3 flex items-center justify-between', borderTop && 'border-t border-border')}>
+    <div className={cn('px-4 py-3.5 flex items-center justify-between', borderTop && 'border-t border-border')}>
       <div>
-        <p className="text-sm text-primary">{label}</p>
-        <p className="text-[11px] text-tertiary">{description}</p>
+        <p className="text-sm text-primary font-medium">{label}</p>
+        <p className="text-[11px] text-tertiary mt-0.5">{description}</p>
       </div>
       <button
         onClick={() => { onChange(!value); haptic('light') }}
         className={cn(
-          'relative w-12 h-7 rounded-full transition-colors',
-          value ? 'bg-accent' : 'bg-border'
+          'relative w-11 h-[26px] rounded-full transition-colors',
+          value ? 'bg-accent' : 'bg-border-strong'
         )}
       >
         <span className={cn(
-          'absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform',
-          value ? 'translate-x-5' : 'translate-x-0.5'
+          'absolute top-[3px] w-5 h-5 rounded-full bg-white shadow-sm transition-transform',
+          value ? 'translate-x-[22px]' : 'translate-x-[3px]'
         )} />
       </button>
     </div>
