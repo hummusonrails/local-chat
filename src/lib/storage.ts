@@ -1,6 +1,30 @@
 import { Conversation, Settings } from './types'
 import { STORAGE_KEYS, DEFAULT_SETTINGS } from './constants'
 
+// Migrate data from old "localchat-*" keys to new "sanctum-*" keys (one-time)
+const OLD_KEYS = { settings: 'localchat-settings', activeConversation: 'localchat-active', authToken: 'localchat-auth' }
+
+function migrateKey(oldKey: string, newKey: string) {
+  if (typeof window === 'undefined') return
+  if (localStorage.getItem(newKey)) return // already migrated
+  const old = localStorage.getItem(oldKey)
+  if (old) {
+    localStorage.setItem(newKey, old)
+    localStorage.removeItem(oldKey)
+  }
+}
+
+function runMigrations() {
+  migrateKey(OLD_KEYS.authToken, STORAGE_KEYS.authToken)
+  migrateKey(OLD_KEYS.settings, STORAGE_KEYS.settings)
+  migrateKey(OLD_KEYS.activeConversation, STORAGE_KEYS.activeConversation)
+}
+
+// Run once on module load
+if (typeof window !== 'undefined') {
+  runMigrations()
+}
+
 // --- Auth token (localStorage only) ---
 
 export function loadAuthToken(): string | null {
