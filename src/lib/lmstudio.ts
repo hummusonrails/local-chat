@@ -84,10 +84,16 @@ export async function* streamChat(
 
   const decoder = new TextDecoder()
   let buffer = ''
+  let readCount = 0
+  let yieldCount = 0
 
   while (true) {
     const { done, value } = await reader.read()
-    if (done) break
+    if (done) {
+      console.log('[STREAM] Reader done. reads=' + readCount + ' yields=' + yieldCount + ' remainingBuffer="' + buffer.substring(0, 100) + '"')
+      break
+    }
+    readCount++
 
     buffer += decoder.decode(value, { stream: true })
     const lines = buffer.split('\n')
@@ -97,12 +103,19 @@ export async function* streamChat(
       const trimmed = line.trim()
       if (!trimmed || !trimmed.startsWith('data: ')) continue
       const data = trimmed.slice(6)
-      if (data === '[DONE]') return
+      if (data === '[DONE]') {
+        console.log('[STREAM] Got [DONE]. reads=' + readCount + ' yields=' + yieldCount)
+        return
+      }
 
       try {
         const parsed = JSON.parse(data)
         const delta = parsed.choices?.[0]?.delta?.content
-        if (delta) yield delta
+        if (delta) {
+          yieldCount++
+          if (yieldCount <= 3) console.log('[STREAM] yield #' + yieldCount + ': "' + delta.substring(0, 30) + '"')
+          yield delta
+        }
       } catch {
         // skip malformed chunks
       }

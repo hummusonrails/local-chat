@@ -97,6 +97,8 @@ export default function ChatView() {
 
     try {
       let fullContent = ''
+      console.log('[SEND] Starting streamChat, model=' + activeModel + ' msgs=' + currentConv.messages.concat(userMsg).length)
+      let chunkCount = 0
       for await (const chunk of streamChat(
         currentConv.messages.concat(userMsg),
         activeModel,
@@ -104,14 +106,20 @@ export default function ChatView() {
         authToken!,
         controller.signal,
       )) {
+        chunkCount++
         fullContent += chunk
         appendStreamContent(chunk)
+        if (chunkCount <= 3) {
+          console.log('[SEND] chunk #' + chunkCount + ': "' + chunk.substring(0, 50) + '" total=' + fullContent.length)
+        }
         if (settings.hapticFeedback && fullContent.length % 20 === 0) {
           haptic('light')
         }
       }
+      console.log('[SEND] Stream done. chunks=' + chunkCount + ' fullContent.length=' + fullContent.length + ' text="' + fullContent.substring(0, 100) + '"')
       updateLastAssistantMessage(convId, fullContent)
     } catch (err: unknown) {
+      console.log('[SEND] Error caught:', err)
       if (err instanceof Error && err.name === 'AbortError') {
         const current = useAppStore.getState().streamingContent
         if (current) updateLastAssistantMessage(convId, current)
@@ -120,6 +128,7 @@ export default function ChatView() {
         updateLastAssistantMessage(convId, `Error: ${errorMsg}`)
       }
     } finally {
+      console.log('[SEND] Finally block, setting streaming=false')
       setStreaming(false)
     }
   }
