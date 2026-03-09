@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useAppStore } from '@/lib/store'
 import { fetchModels, checkConnection } from '@/lib/lmstudio'
+import AuthGate from '@/components/AuthGate'
 import Sidebar from '@/components/Sidebar'
 import TopBar from '@/components/TopBar'
 import ChatView from '@/components/ChatView'
@@ -12,7 +13,7 @@ import Settings from '@/components/Settings'
 export default function Home() {
   const {
     init, setModels, setActiveModel, setConnected, settings, activeModel,
-    setSidebarOpen,
+    setSidebarOpen, authToken, authenticated,
   } = useAppStore()
 
   const touchStartX = useRef(0)
@@ -36,23 +37,24 @@ export default function Home() {
     }
   }, [settings.theme])
 
-  // Apply accent color as CSS variable
+  // Apply accent color
   useEffect(() => {
     document.documentElement.style.setProperty('--accent', settings.accentColor)
   }, [settings.accentColor])
 
-  // Connect to LM Studio
+  // Connect to LM Studio via API proxy
   useEffect(() => {
+    if (!authenticated || !authToken) return
     let cancelled = false
 
     async function connect() {
       try {
-        const ok = await checkConnection(settings.lmstudioBaseUrl)
+        const ok = await checkConnection(authToken!)
         if (cancelled) return
         setConnected(ok)
 
         if (ok) {
-          const models = await fetchModels(settings.lmstudioBaseUrl)
+          const models = await fetchModels(authToken!)
           if (cancelled) return
           setModels(models)
           if (models.length > 0 && !activeModel) {
@@ -66,11 +68,9 @@ export default function Home() {
 
     connect()
     const interval = setInterval(connect, 30000)
-
     return () => { cancelled = true; clearInterval(interval) }
-  }, [settings.lmstudioBaseUrl, setConnected, setModels, setActiveModel, activeModel])
+  }, [authenticated, authToken, setConnected, setModels, setActiveModel, activeModel])
 
-  // Swipe to open sidebar
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
   }
@@ -83,18 +83,20 @@ export default function Home() {
   }
 
   return (
-    <div
-      className="h-[100dvh] flex flex-col bg-background text-primary overflow-hidden"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      <TopBar />
-      <div className="flex-1 relative overflow-hidden">
-        <ChatView />
+    <AuthGate>
+      <div
+        className="h-[100dvh] flex flex-col bg-background text-primary overflow-hidden"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <TopBar />
+        <div className="flex-1 relative overflow-hidden">
+          <ChatView />
+        </div>
+        <Sidebar />
+        <ModelPicker />
+        <Settings />
       </div>
-      <Sidebar />
-      <ModelPicker />
-      <Settings />
-    </div>
+    </AuthGate>
   )
 }

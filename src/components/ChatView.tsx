@@ -12,7 +12,7 @@ export default function ChatView() {
   const {
     activeConversation, activeModel, settings, isStreaming, streamingContent,
     addMessage, setStreaming, appendStreamContent, updateLastAssistantMessage,
-    createConversation, activeConversationId, connected,
+    createConversation, activeConversationId, connected, authToken,
   } = useAppStore()
 
   const [input, setInput] = useState('')
@@ -105,6 +105,7 @@ export default function ChatView() {
         currentConv.messages.concat(userMsg),
         activeModel,
         settings,
+        authToken!,
         controller.signal,
       )) {
         fullContent += chunk

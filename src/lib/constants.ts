@@ -1,5 +1,4 @@
 export const DEFAULT_SETTINGS = {
-  lmstudioBaseUrl: 'http://localhost:1234',
   theme: 'dark' as const,
   accentColor: '#10A37F',
   customInstructions: '',
@@ -19,7 +18,7 @@ export const ACCENT_COLORS = [
 ]
 
 export const STORAGE_KEYS = {
-  conversations: 'localchat-conversations',
   settings: 'localchat-settings',
   activeConversation: 'localchat-active',
+  authToken: 'localchat-auth',
 }

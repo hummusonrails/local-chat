@@ -3,12 +3,19 @@ import { v4 as uuidv4 } from 'uuid'
 import { Conversation, Message, Settings, LMStudioModel } from './types'
 import { DEFAULT_SETTINGS } from './constants'
 import {
-  loadConversations, saveConversations,
   loadSettings, saveSettings,
   loadActiveConversationId, saveActiveConversationId,
+  loadAuthToken, saveAuthToken, clearAuthToken,
+  loadConversationsFromAPI, saveConversationsToAPI, clearConversationsFromAPI,
 } from './storage'
 
 interface AppState {
+  // Auth
+  authToken: string | null
+  authenticated: boolean
+  setAuthToken: (token: string) => void
+  logout: () => void
+
   // Conversations
   conversations: Conversation[]
   activeConversationId: string | null
@@ -31,7 +38,7 @@ interface AppState {
   abortController: AbortController | null
 
   // Actions
-  init: () => void
+  init: () => Promise<void>
   setModels: (models: LMStudioModel[]) => void
   setActiveModel: (model: string) => void
   setConnected: (connected: boolean) => void
@@ -57,7 +64,26 @@ interface AppState {
   stopStreaming: () => void
 }
 
+function persistConversations(state: AppState) {
+  if (state.authToken) {
+    saveConversationsToAPI(state.conversations, state.authToken)
+  }
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
+  authToken: null,
+  authenticated: false,
+
+  setAuthToken: (token) => {
+    saveAuthToken(token)
+    set({ authToken: token, authenticated: true })
+  },
+
+  logout: () => {
+    clearAuthToken()
+    set({ authToken: null, authenticated: false, conversations: [], activeConversationId: null })
+  },
+
   conversations: [],
   activeConversationId: null,
   activeConversation: () => {
@@ -78,11 +104,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   streamingContent: '',
   abortController: null,
 
-  init: () => {
-    const conversations = loadConversations()
+  init: async () => {
     const settings = loadSettings()
     const activeId = loadActiveConversationId()
-    set({ conversations, settings, activeConversationId: activeId })
+    const token = loadAuthToken()
+
+    if (token) {
+      const conversations = await loadConversationsFromAPI(token)
+      set({ conversations, settings, activeConversationId: activeId, authToken: token, authenticated: true })
+    } else {
+      set({ settings, activeConversationId: activeId })
+    }
   },
 
   setModels: (models) => set({ models }),
@@ -112,7 +144,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     const updated = [conv, ...get().conversations]
     set({ conversations: updated, activeConversationId: id })
-    saveConversations(updated)
+    persistConversations({ ...get(), conversations: updated })
     saveActiveConversationId(id)
     return id
   },
@@ -127,7 +159,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const updated = conversations.filter(c => c.id !== id)
     const newActive = activeConversationId === id ? null : activeConversationId
     set({ conversations: updated, activeConversationId: newActive })
-    saveConversations(updated)
+    persistConversations({ ...get(), conversations: updated })
     saveActiveConversationId(newActive)
   },
 
@@ -136,7 +168,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       c.id === id ? { ...c, title, updatedAt: Date.now() } : c
     )
     set({ conversations: updated })
-    saveConversations(updated)
+    persistConversations({ ...get(), conversations: updated })
   },
 
   archiveConversation: (id) => {
@@ -144,7 +176,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       c.id === id ? { ...c, archived: !c.archived, updatedAt: Date.now() } : c
     )
     set({ conversations: updated })
-    saveConversations(updated)
+    persistConversations({ ...get(), conversations: updated })
   },
 
   pinConversation: (id) => {
@@ -152,12 +184,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       c.id === id ? { ...c, pinned: !c.pinned, updatedAt: Date.now() } : c
     )
     set({ conversations: updated })
-    saveConversations(updated)
+    persistConversations({ ...get(), conversations: updated })
   },
 
   clearAllConversations: () => {
     set({ conversations: [], activeConversationId: null })
-    saveConversations([])
+    const token = get().authToken
+    if (token) clearConversationsFromAPI(token)
     saveActiveConversationId(null)
   },
 
@@ -165,14 +198,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     const updated = get().conversations.map(c => {
       if (c.id !== conversationId) return c
       const messages = [...c.messages, message]
-      // Auto-title from first user message
       const title = c.messages.length === 0 && message.role === 'user'
         ? message.content.slice(0, 60) + (message.content.length > 60 ? '...' : '')
         : c.title
       return { ...c, messages, title, updatedAt: Date.now() }
     })
     set({ conversations: updated })
-    saveConversations(updated)
+    persistConversations({ ...get(), conversations: updated })
   },
 
   updateLastAssistantMessage: (conversationId, content) => {
@@ -186,7 +218,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       return { ...c, messages, updatedAt: Date.now() }
     })
     set({ conversations: updated })
-    saveConversations(updated)
+    persistConversations({ ...get(), conversations: updated })
   },
 
   setStreaming: (streaming, content = '', controller = null) => {

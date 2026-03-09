@@ -24,7 +24,6 @@ export interface LMStudioModel {
 }
 
 export interface Settings {
-  lmstudioBaseUrl: string
   theme: 'light' | 'dark' | 'system'
   accentColor: string
   customInstructions: string

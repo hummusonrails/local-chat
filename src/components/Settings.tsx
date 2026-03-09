@@ -7,19 +7,25 @@ import { checkConnection } from '@/lib/lmstudio'
 import { cn, haptic } from '@/lib/utils'
 
 export default function Settings() {
-  const { settings, settingsOpen, setSettingsOpen, updateSettings, connected, setConnected, clearAllConversations, conversations } = useAppStore()
+  const { settings, settingsOpen, setSettingsOpen, updateSettings, connected, setConnected, clearAllConversations, conversations, authToken, logout } = useAppStore()
   const [testingConnection, setTestingConnection] = useState(false)
   const [connectionResult, setConnectionResult] = useState<boolean | null>(null)
 
   if (!settingsOpen) return null
 
   const handleTestConnection = async () => {
+    if (!authToken) return
     setTestingConnection(true)
     setConnectionResult(null)
-    const ok = await checkConnection(settings.lmstudioBaseUrl)
+    const ok = await checkConnection(authToken)
     setConnectionResult(ok)
     setConnected(ok)
     setTestingConnection(false)
+  }
+
+  const handleLogout = () => {
+    logout()
+    setSettingsOpen(false)
   }
 
   const handleClearAll = () => {
@@ -43,16 +49,7 @@ export default function Settings() {
         <section className="px-4 pt-6">
           <h3 className="text-[11px] font-semibold uppercase tracking-wider text-tertiary mb-2 px-1">LM Studio Connection</h3>
           <div className="bg-surface rounded-xl overflow-hidden">
-            <div className="px-4 py-3">
-              <label className="text-sm text-primary mb-1 block">Server URL</label>
-              <input
-                type="text"
-                value={settings.lmstudioBaseUrl}
-                onChange={e => updateSettings({ lmstudioBaseUrl: e.target.value })}
-                className="w-full bg-input border border-border rounded-lg px-3 py-2 text-sm text-primary focus:outline-none focus:border-accent"
-              />
-            </div>
-            <div className="px-4 py-3 border-t border-border flex items-center justify-between">
+            <div className="px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className={cn(
                   'w-2.5 h-2.5 rounded-full',
@@ -72,7 +69,7 @@ export default function Settings() {
             </div>
             {connectionResult !== null && (
               <div className={cn('px-4 py-2 text-xs', connectionResult ? 'text-green-500' : 'text-red-500')}>
-                {connectionResult ? 'Connection successful!' : 'Connection failed. Check URL and ensure LM Studio is running.'}
+                {connectionResult ? 'Connection successful!' : 'Connection failed. Ensure LM Studio is running.'}
               </div>
             )}
           </div>
@@ -195,9 +192,14 @@ export default function Settings() {
                 Delete all conversations
               </button>
             </div>
+            <div className="px-4 py-3 border-t border-border">
+              <button onClick={handleLogout} className="text-sm text-red-500">
+                Sign out
+              </button>
+            </div>
           </div>
           <p className="text-[11px] text-tertiary mt-3 px-1">
-            All data is stored locally in your browser. Nothing is sent to external servers.
+            Conversations are stored securely on the server. All AI processing runs on your local LM Studio instance.
           </p>
         </section>
       </div>

@@ -1,8 +1,13 @@
 import { LMStudioModel, Message, Settings } from './types'
 
-export async function fetchModels(baseUrl: string): Promise<LMStudioModel[]> {
-  const res = await fetch(`${baseUrl}/v1/models`, {
-    signal: AbortSignal.timeout(5000),
+function authHeaders(token: string): Record<string, string> {
+  return { Authorization: `Bearer ${token}` }
+}
+
+export async function fetchModels(token: string): Promise<LMStudioModel[]> {
+  const res = await fetch('/api/models', {
+    headers: authHeaders(token),
+    signal: AbortSignal.timeout(10000),
   })
   if (!res.ok) throw new Error(`Failed to fetch models: ${res.status}`)
   const data = await res.json()
@@ -13,6 +18,7 @@ export async function* streamChat(
   messages: Message[],
   model: string,
   settings: Settings,
+  token: string,
   signal?: AbortSignal,
 ): AsyncGenerator<string> {
   const apiMessages = []
@@ -46,11 +52,11 @@ export async function* streamChat(
     }
   }
 
-  const res = await fetch(`${settings.lmstudioBaseUrl}/v1/chat/completions`, {
+  const res = await fetch('/api/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: 'Bearer lm-studio',
+      ...authHeaders(token),
     },
     body: JSON.stringify({
       model,
@@ -64,7 +70,7 @@ export async function* streamChat(
 
   if (!res.ok) {
     const err = await res.text()
-    throw new Error(`LM Studio error ${res.status}: ${err}`)
+    throw new Error(`Error ${res.status}: ${err}`)
   }
 
   if (!settings.streamResponses) {
@@ -104,10 +110,11 @@ export async function* streamChat(
   }
 }
 
-export async function checkConnection(baseUrl: string): Promise<boolean> {
+export async function checkConnection(token: string): Promise<boolean> {
   try {
-    const res = await fetch(`${baseUrl}/v1/models`, {
-      signal: AbortSignal.timeout(3000),
+    const res = await fetch('/api/models', {
+      headers: authHeaders(token),
+      signal: AbortSignal.timeout(10000),
     })
     return res.ok
   } catch {
