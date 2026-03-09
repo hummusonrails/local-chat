@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateAuth } from '@/lib/auth'
 
+export const runtime = 'edge'
+
 /**
  * POST /api/chat — proxy chat completions to LM Studio.
  * The LMSTUDIO_URL env var holds the Cloudflare tunnel URL.
@@ -40,29 +42,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data)
   }
 
-  // Stream the SSE response through
-  const { readable, writable } = new TransformStream()
-  const writer = writable.getWriter()
+  // Read the entire SSE stream from LM Studio, then re-emit as a ReadableStream.
+  // This avoids TransformStream issues on Vercel's serverless runtime.
+  const encoder = new TextEncoder()
 
-  ;(async () => {
-    const reader = upstream.body?.getReader()
-    if (!reader) { writer.close(); return }
-    try {
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        await writer.write(value)
+  const readable = new ReadableStream({
+    async start(controller) {
+      const reader = upstream.body?.getReader()
+      if (!reader) {
+        controller.close()
+        return
       }
-    } finally {
-      writer.close()
-    }
-  })()
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          controller.enqueue(value)
+        }
+      } catch (err) {
+        controller.enqueue(encoder.encode(`data: {"error":"Stream interrupted"}\n\n`))
+      } finally {
+        controller.close()
+      }
+    },
+  })
 
   return new Response(readable, {
     headers: {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
     },
   })
 }
