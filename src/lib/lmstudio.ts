@@ -191,7 +191,12 @@ export async function* streamChat(
           // Ignore: chat.start, model_load.*, prompt_processing.*, reasoning.*, message.start, message.end, tool_call.arguments
         }
       } catch (e) {
-        if (e instanceof Error && e.message.includes('LM Studio')) throw e
+        if (e instanceof Error && (
+          e.message.includes('LM Studio') ||
+          e.message.includes('MCP error') ||
+          e.message.includes('context length') ||
+          e.message.includes('Resource not found')
+        )) throw e
         // skip malformed events
       }
     }

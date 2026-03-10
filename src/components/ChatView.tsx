@@ -95,9 +95,10 @@ export default function ChatView() {
     const controller = new AbortController()
     setStreaming(true, '', controller)
 
+    let fullContent = ''
+    const toolCalls: import('@/lib/types').ToolCall[] = []
+
     try {
-      let fullContent = ''
-      const toolCalls: import('@/lib/types').ToolCall[] = []
 
       for await (const event of streamChat(
         currentConv.messages.concat(userMsg),
@@ -146,6 +147,14 @@ export default function ChatView() {
             break
         }
       }
+      // Mark any tool calls still stuck in "calling" as errors
+      // (happens when MCP server crashes mid-tool-call without sending failure event)
+      for (const tc of toolCalls) {
+        if (tc.status === 'calling') {
+          tc.status = 'error'
+          tc.output = 'Tool call did not complete'
+        }
+      }
       updateLastAssistantMessage(convId, fullContent, toolCalls.length > 0 ? toolCalls : undefined)
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') {
@@ -153,7 +162,14 @@ export default function ChatView() {
         if (current) updateLastAssistantMessage(convId, current)
       } else {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error'
-        updateLastAssistantMessage(convId, `Error: ${errorMsg}`)
+        // Also finalize any incomplete tool calls on error
+        for (const tc of toolCalls) {
+          if (tc.status === 'calling') {
+            tc.status = 'error'
+            tc.output = errorMsg
+          }
+        }
+        updateLastAssistantMessage(convId, fullContent || `Error: ${errorMsg}`, toolCalls.length > 0 ? toolCalls : undefined)
       }
     } finally {
       setStreaming(false)
